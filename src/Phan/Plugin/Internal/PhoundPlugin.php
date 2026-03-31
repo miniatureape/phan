@@ -241,6 +241,15 @@ final class PhoundVisitor extends PluginAwarePostAnalysisVisitor
         }
         self::$db = new SQLite3($db_path);
 
+        // Try to load the zstd compression extension; continue without it if unavailable.
+        try {
+            if (@self::$db->loadExtension('libsqlite_zstd.so')) {
+                fwrite(STDERR, "PhoundPlugin: libsqlite_zstd.so loaded successfully; zstd compression will be used.\n");
+            }
+        } catch (\Exception $e) {
+            // Extension not available; continuing without zstd compression
+        }
+
         foreach (array_keys(self::TABLES) as $table) {
             if (!self::$db->exec("DROP TABLE IF EXISTS $table")) {
                 throw new Exception("Failed to drop table: $table");
